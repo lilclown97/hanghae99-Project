@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+        <!-- Bootstrap CSS -->
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+            integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2"
+            crossorigin="anonymous"
+        />
+
+        <!-- Font Awesome CSS -->
+        <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+        <link href="/mystyle.css" rel="stylesheet" />
+
+        <title>W4 게시판 | 게시글 상세</title>
+    </head>
+
+    <body>
+        <nav class="navbar navbar-expand-sm navbar-dark bg-sparta justify-content-end">
+            <a class="navbar-brand" href="/posts.html">
+                <img src="/logo_big_tr.png" width="30" height="30" class="d-inline-block align-top" alt="" />
+                W4 게시판
+            </a>
+            <button
+                class="navbar-toggler ml-auto"
+                type="button"
+                data-toggle="collapse"
+                data-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent"
+                aria-expanded="true"
+                aria-label="Toggle navigation"
+            >
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="navbar-collapse collapse flex-grow-0 ml-auto" id="navbarSupportedContent" style="">
+                <ul class="navbar-nav mr-auto text-right">
+                    <li class="nav-item" id="link-logout">
+                        <a class="nav-link" data-toggle="modal" data-target="#signOutModal">
+                            로그아웃<i class="fa fa-sign-out ml-2" aria-hidden="true"></i>
+                        </a>
+                        <div
+                            class="modal text-left"
+                            id="signOutModal"
+                            tabindex="-1"
+                            role="dialog"
+                            aria-labelledby="signOutModalLabel"
+                            aria-hidden="true"
+                        >
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="signOutModalLabel">로그아웃</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">정말로 로그아웃 하시겠습니까?</div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-sparta" data-dismiss="modal">
+                                            취소
+                                        </button>
+                                        <button type="button" class="btn btn-sparta" onclick="signOut()">
+                                            로그아웃하기
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        <div class="wrap">
+            <div>게시글</div>
+            <div id="postsList" class="mb-5"></div>
+        </div>
+        <div class="wrap">
+            <div>댓글</div>
+            <div class="wrap">
+                <div class="card mx-auto" style="max-width: 480px">
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon2"><i aria-hidden="true"></i></span>
+                            </div>
+                            <input
+                                type="password"
+                                class="form-control"
+                                placeholder="댓글"
+                                aria-label="Password"
+                                aria-describedby="basic-addon2"
+                                id="inputcomments"
+                            />
+                        </div>
+                        <div class="row d-flex justify-content-around">
+                            <div class="col-6 pr-2">
+                                <button type="button" class="btn btn-sparta btn-block" onclick="sign_in()">작성</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="commentsList" class="mb-5"></div>
+        </div>
+
+        <!-- Optional JavaScript -->
+        <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+        <script
+            src="https://code.jquery.com/jquery-3.5.1.js"
+            integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc="
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+            integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js"
+            integrity="sha384-w1Q4orYjBQndcko6MimVbzY0tgp4pWB4lZ7lr30WKz0vr/aWKhXdBNmNb5D92v7s"
+            crossorigin="anonymous"
+        ></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+        <script src="https://cdn.socket.io/socket.io-3.0.1.min.js"></script>
+        <script src="/api.js"></script>
+        <script>
+            const queryString = window.location.search;
+            const urlParams = new URLSearchParams(queryString);
+            const postsId = urlParams.get('postsId');
+            let comments;
+            let posts;
+            let user;
+            getSelf(function (u) {
+                user = u;
+            });
+
+            //게시글 조회
+            function getPosts(category, callback) {
+                $('#postsList').empty();
+                $.ajax({
+                    type: 'GET',
+                    url: `/posts/${postsId}`,
+                    headers: {
+                        authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
+                    success: function (response) {
+                        callback(response.posts);
+                    },
+                });
+            }
+            //댓글 조회
+            function getComments(category, callback) {
+                $('#commentsList').empty();
+                $.ajax({
+                    type: 'GET',
+                    url: `/posts/${postsId}/comments`,
+                    headers: {
+                        authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
+                    success: function (response) {
+                        callback(response.comments);
+                    },
+                });
+            }
+
+            $(document).ready(function () {
+                getPosts(null, function (posts) {
+                    for (let i = 0; i < posts.length; i++) {
+                        make_card(posts[i]);
+                    }
+                });
+                getComments(null, function (comments) {
+                    for (let j = 0; j < comments.length; j++) {
+                        make_cards(comments[j]);
+                    }
+                });
+            });
+
+            function make_card(item) {
+                let htmlTemp = `<div>
+                    <div class="card mb-2">
+                    <div class="row no-gutters">
+                        <div class="col-sm-7 d-flex">
+                            <div class="card-body flex-fill">
+                                <div class="card-title mb-auto">
+                                    <h5 style="display: inline">${item['title']}</h5>
+                                    <span class="card-price ml-2">${item['nickname']}</span>
+                                </div>
+                                <span class="badge badge-secondary">${item['date']}</span>
+                                <div>
+                                  <span class="card-price ml-2">${item['posts']}</span>
+                                  </div>
+                                  <div class="row d-flex justify-content-around">
+                                    <div class="col-6 pr-2">
+                                        <button type="button" class="btn btn-sparta btn-block" onclick="location.href='/editposts.html?postsId=${item['postsId']}'">수정</button>
+                                    </div>
+                                    <div class="col-6 pl-2">
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-sparta btn-block"
+                                            onclick="deleteposts()"
+                                        >
+                                            삭제
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>`;
+                $('#postsList').append(htmlTemp);
+            }
+
+            function make_cards(item) {
+                let htmlTemp = `<div>
+                    <div class="card mb-2" onclick="location.href='/editcomments.html?commentsId=${item['commentsId']}'">
+                    <div class="row no-gutters">
+                        <div class="col-sm-7 d-flex">
+                            <div class="card-body flex-fill">
+                                <div class="card-title mb-auto">
+                                    
+                                    <span class="card-price ml-2">${item['nickname']}</span>
+                                </div>
+                                <span class="badge badge-secondary">${item['date']}</span>
+                                <div>
+                                  <span class="card-price ml-2">${item['comments']}</span>
+                                  </div>
+                                  
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>`;
+                $('#commentsList').append(htmlTemp);
+            }
+
+            //게시글삭제
+            function deleteposts() {
+                $.ajax({
+                    type: 'DELETE',
+                    url: `/posts/${postsId}`,
+                    headers: {
+                        authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
+                    success: function () {
+                        window.location.href = '/posts.html';
+                    },
+                    error: function (error) {
+                        customAlert(error.responseJSON.errorMessage);
+                    },
+                });
+            }
+
+            //게시글 작성
+            function sign_in() {
+                let comments = $('#inputcomments').val();
+                $.ajax({
+                    type: 'POST',
+                    url: `/posts/${postsId}`,
+                    headers: {
+                        authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
+                    data: {
+                        comments: comments,
+                    },
+                    success: function (response) {
+                        location.reload();
+                    },
+                    error: function (error) {
+                        customAlert(error.responseJSON.errorMessage);
+                    },
+                });
+            }
+        </script>
+    </body>
+</html>
