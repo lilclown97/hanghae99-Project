@@ -1,6 +1,6 @@
 const swaggerAutogen = require('swagger-autogen')();
 
-const doc = {
+const doc = { 
   info: {
     version: '1.0.0',
     title: 'Javascript Study',
